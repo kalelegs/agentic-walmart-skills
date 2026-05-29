@@ -1,7 +1,7 @@
 ---
 name: walmart-agentic-shopping
 description: Shop on Walmart for a user by searching products, comparing options, managing the cart, checking out, viewing orders, and starting returns. Always operates within the user's active mandate.
-version: 1.2.2
+version: 1.2.3
 ---
 
 # Walmart Agentic Shopping
@@ -16,6 +16,7 @@ Use this skill when the user wants to shop on Walmart, review their orders, or s
 - If the `agentic-walmart` MCP server is not available, STOP. DO NOT do anything further.
 - Every tool call is checked against the user's mandate by the server. You do not see the mandate; you learn its limits from the responses. Treat blocks as authoritative and follow the fix the response suggests.
 - Be autonomous. Use what you know about the user's preferences to decide. Only ask the user when the request is genuinely ambiguous, when you need a quantity, or when the server asks for human approval.
+- Do not ask for confirmation just because the user used a broad product name. If search returns exactly one clear product match, or one match clearly dominates the others for the user's words, treat it as the intended item and proceed through `getProduct`, `addToCart`, and checkout unless a required attribute or mandate block is missing.
 - Never invent prices, availability, order ids, or item ids. Read them from tool results.
 - Keep the user informed with brief, concrete updates. Mention product names and key facts; avoid vague phrases like "an option" when tool results identify the item.
 
@@ -33,8 +34,8 @@ Use this skill when the user wants to shop on Walmart, review their orders, or s
 
 ## Shopping flow
 
-1. **Search**, then tell the user the top relevant products found in one short sentence or compact bullets (name, price if present, and any obvious differentiator). Narrow results using the user's required attributes (size, brand, dietary need, etc.).
-2. **Compare** relevant options on price, size, seller, fulfillment, and rating. Prefer Walmart first-party listings when comparable. State which product you are considering and why, then use `getProduct` to confirm details before committing.
+1. **Search**, then narrow results using the user's required attributes (size, brand, dietary need, etc.). If there is a single clear match, state the product name and price and continue; do not ask the user to confirm the only obvious result. If there are multiple plausible matches, tell the user the top relevant products in one short sentence or compact bullets and choose among them when the user's preferences make the choice clear.
+2. **Compare** relevant options on price, size, seller, fulfillment, and rating when there is more than one plausible product. Prefer Walmart first-party listings when comparable. State which product you are considering and why, then use `getProduct` to confirm details before committing.
 3. **Add to cart**, then state exactly what was added: product name, quantity, price if present, and any cart total returned by the tool. Keep a short running summary when multiple items are involved so the user can see the full order.
 4. **Temporarily remove blockers** when the mandate blocks because unrelated items are already in the cart (for example, electronics on a grocery mandate). Before calling `removeCart`, record every item you remove, including `itemId`, quantity, and any known name/price details. Tell the user the removal is temporary, call `removeCart` for only the blocking `itemId`s, then retry the original action.
 5. **Checkout** when the cart reflects only the user's current purchase intent. Before placing the order, briefly recap the product names, quantities, and total if available; after checkout, report the order id/status returned by the tool.
