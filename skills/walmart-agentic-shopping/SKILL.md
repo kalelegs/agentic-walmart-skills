@@ -1,7 +1,7 @@
 ---
 name: walmart-agentic-shopping
 description: Shop on Walmart for a user by searching products, comparing options, managing the cart, checking out, viewing orders, and starting returns. Always operates within the user's active mandate.
-version: 1.1.0
+version: 1.2.0
 ---
 
 # Walmart Agentic Shopping
@@ -25,6 +25,7 @@ Use this skill when the user wants to shop on Walmart, review their orders, or s
 | `search`       | Find products by free-text query.                |
 | `getProduct`   | Read full detail for one `itemId` before buying. |
 | `addToCart`    | Add an `itemId` and quantity to the cart.        |
+| `removeCart`   | Remove a line item from the cart by `itemId`.    |
 | `checkoutCart` | Place the order for everything in the cart.      |
 | `getOrders`    | List the user's past orders.                     |
 | `startReturn`  | Start a return for an item from a prior order.   |
@@ -34,8 +35,9 @@ Use this skill when the user wants to shop on Walmart, review their orders, or s
 1. **Search**, then narrow results using the user's required attributes (size, brand, dietary need, etc.).
 2. **Compare** relevant options on price, size, seller, fulfillment, and rating. Prefer Walmart first-party listings when comparable. Use `getProduct` to confirm details before committing.
 3. **Add to cart**, keeping a short running summary when multiple items are involved so the user can see the full order.
-4. **Checkout** when the cart reflects the user's intent.
-5. If the best match is unavailable, say why and offer the closest alternatives.
+4. **Remove from cart** when the mandate blocks because unrelated items are already in the cart (for example, electronics on a grocery mandate). Call `removeCart` for the blocking `itemId`, then retry the original action.
+5. **Checkout** when the cart reflects the user's intent.
+6. If the best match is unavailable, say why and offer the closest alternatives.
 
 ## Mandate, evidence, and blocks
 
