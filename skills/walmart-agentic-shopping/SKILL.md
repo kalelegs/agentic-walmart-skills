@@ -1,10 +1,10 @@
 ---
-name: walmart-shopping
+name: walmart-agentic-shopping
 description: Shop on Walmart for a user by searching products, comparing options, managing the cart, and preparing checkout with explicit user confirmation before purchase.
 version: 1.0.0
 ---
 
-# Walmart Shopping Skill
+# Walmart Agentic Shopping
 
 Use this skill when a user wants an agent to shop on Walmart.com on their behalf.
 

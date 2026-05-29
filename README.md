@@ -4,4 +4,4 @@ Agent skill definition for shopping on Walmart on a user's behalf.
 
 ## Files
 
-- `SKILL.md` - Walmart shopping skill instructions and operating boundaries
+- `skills/walmart-agentic-shopping/SKILL.md` - Walmart shopping skill instructions and operating boundaries
