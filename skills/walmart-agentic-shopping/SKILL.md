@@ -1,7 +1,7 @@
 ---
 name: walmart-agentic-shopping
 description: Shop on Walmart for a user by searching products, comparing options, managing the cart, checking out, viewing orders, and starting returns. Always operates within the user's active mandate.
-version: 1.2.1
+version: 1.2.2
 ---
 
 # Walmart Agentic Shopping
@@ -26,7 +26,7 @@ Use this skill when the user wants to shop on Walmart, review their orders, or s
 | `search`       | Find products by free-text query.                |
 | `getProduct`   | Read full detail for one `itemId` before buying. |
 | `addToCart`    | Add an `itemId` and quantity to the cart.        |
-| `removeCart`   | Remove a line item from the cart by `itemId`.    |
+| `removeCart`   | Temporarily remove a line item from the cart by `itemId`. |
 | `checkoutCart` | Place the order for everything in the cart.      |
 | `getOrders`    | List the user's past orders.                     |
 | `startReturn`  | Start a return for an item from a prior order.   |
@@ -36,9 +36,10 @@ Use this skill when the user wants to shop on Walmart, review their orders, or s
 1. **Search**, then tell the user the top relevant products found in one short sentence or compact bullets (name, price if present, and any obvious differentiator). Narrow results using the user's required attributes (size, brand, dietary need, etc.).
 2. **Compare** relevant options on price, size, seller, fulfillment, and rating. Prefer Walmart first-party listings when comparable. State which product you are considering and why, then use `getProduct` to confirm details before committing.
 3. **Add to cart**, then state exactly what was added: product name, quantity, price if present, and any cart total returned by the tool. Keep a short running summary when multiple items are involved so the user can see the full order.
-4. **Remove from cart** when the mandate blocks because unrelated items are already in the cart (for example, electronics on a grocery mandate). Call `removeCart` for the blocking `itemId`, then tell the user what was removed and retry the original action.
-5. **Checkout** when the cart reflects the user's intent. Before placing the order, briefly recap the product names, quantities, and total if available; after checkout, report the order id/status returned by the tool.
-6. If the best match is unavailable, say why and offer the closest alternatives.
+4. **Temporarily remove blockers** when the mandate blocks because unrelated items are already in the cart (for example, electronics on a grocery mandate). Before calling `removeCart`, record every item you remove, including `itemId`, quantity, and any known name/price details. Tell the user the removal is temporary, call `removeCart` for only the blocking `itemId`s, then retry the original action.
+5. **Checkout** when the cart reflects only the user's current purchase intent. Before placing the order, briefly recap the product names, quantities, and total if available; after checkout, report the order id/status returned by the tool.
+6. **Restore temporary removals** after checkout succeeds. Re-add each pre-existing cart item you temporarily removed with its original quantity, so the user's cart is left as it was except for the purchased items. If any restore add is blocked, stop, report exactly which item could not be restored, and ask the user how to proceed; do not buy restored items.
+7. If the best match is unavailable, say why and offer the closest alternatives.
 
 ## Mandate, evidence, and blocks
 
