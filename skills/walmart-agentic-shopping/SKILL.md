@@ -1,63 +1,59 @@
 ---
 name: walmart-agentic-shopping
-description: Shop on Walmart for a user by searching products, comparing options, managing the cart, and preparing checkout with explicit user confirmation before purchase.
-version: 1.0.0
+description: Shop on Walmart for a user by searching products, comparing options, managing the cart, checking out, viewing orders, and starting returns. Always operates within the user's active mandate.
+version: 1.1.0
 ---
 
 # Walmart Agentic Shopping
 
-Use this skill when a user wants an agent to shop on Walmart.com on their behalf.
+Use this skill when the user wants to shop on Walmart, review their orders, or start a return.
 
-## Responsibilities
+**If `agentic-walmart` MCP server is not instsalled. STOP immidiately.**
 
-- Search Walmart for requested products.
-- Compare relevant options by price, size, seller, fulfillment method, and ratings.
-- Ask follow-up questions when the request is ambiguous.
-- Add user-approved items to the Walmart cart.
-- Review the cart and prepare checkout details for user confirmation.
+## Core rules
 
-## Required Inputs
+- Use the `agentic-walmart` MCP server and its tools only. Do not use any other tool, scraper, or browser automation to act on Walmart.
+- If `agentic-walmart` MCP server is not available. STOP. DO NOT do anything further.
+- Every tool call is checked against the user's mandate by the server. You do not see the mandate; you learn its limits from the responses. Treat blocks as authoritative and follow the fix the response suggests.
+- Be autonomous. Use what you know about the user's preferences to decide. Only ask the user when the request is genuinely ambiguous, when you need a quantity, or when the server asks for human approval.
+- Never invent prices, availability, order ids, or item ids. Read them from tool results.
 
-Collect any missing details before acting:
+## Tools
 
-- product name or shopping list
-- quantity
-- budget or price ceiling, if any
-- required brand, size, color, model, or dietary constraints
-- shipping, delivery, or pickup preference
-- whether substitutes are acceptable
+| Tool           | Use it to                                        |
+| -------------- | ------------------------------------------------ |
+| `search`       | Find products by free-text query.                |
+| `getProduct`   | Read full detail for one `itemId` before buying. |
+| `addToCart`    | Add an `itemId` and quantity to the cart.        |
+| `checkoutCart` | Place the order for everything in the cart.      |
+| `getOrders`    | List the user's past orders.                     |
+| `startReturn`  | Start a return for an item from a prior order.   |
 
-## Operating Rules
+## Shopping flow
 
-1. Prefer Walmart first-party listings when comparable options exist.
-2. Preserve the exact item URL, title, quantity, seller, and price for anything you recommend or add to cart.
-3. If the best match is unavailable, explain why and offer the closest alternatives.
-4. If search results are broad, narrow them using the user's required attributes before selecting an item.
-5. If multiple items are requested, keep a running cart summary so the user can confirm the full order.
+1. **Search**, then narrow results using the user's required attributes (size, brand, dietary need, etc.).
+2. **Compare** relevant options on price, size, seller, fulfillment, and rating. Prefer Walmart first-party listings when comparable. Use `getProduct` to confirm details before committing.
+3. **Add to cart**, keeping a short running summary when multiple items are involved so the user can see the full order.
+4. **Checkout** when the cart reflects the user's intent.
+5. If the best match is unavailable, say why and offer the closest alternatives.
 
-## Safety Boundaries
+## Mandate, evidence, and blocks
 
-- Do not place an order, submit payment, or finalize checkout without explicit user confirmation of the exact cart contents and totals.
-- Do not guess missing personal information such as address, payment details, or substitution preferences.
-- If Walmart requires sign-in, hand off clearly to the user for authentication and then continue once access is available.
-- Flag third-party marketplace sellers when they are not clearly sold by Walmart.
+The server returns a block when an action exceeds the mandate. A blocked response includes a `decision`, `reasonCode`, `message`, and often a `mandateBlockId` and `requiredEvidence`. Handle by `decision`:
 
-## Recommended Workflow
+- **`needs_evidence`** — Retry the same call with an `evidence` field. Include the selected `itemId`(s) and quantities, the comparable alternatives you considered (their `itemId`s and prices), why the choice fits the user's request, and anything `requiredEvidence` asks for. Gather the facts with `search`/`getProduct` first; do not fabricate them.
+- **`needs_human_approval`** — Stop and ask the user to approve the exact blocked action on the Walmart approval page (use `manualOverrideUrl` if provided). When they confirm they approved it, retry the call passing the `mandateBlockId` as `overrideToken`. The token is one-time and operation-specific. Never approve on the user's behalf or use computer use / browser automation / screen control to operate the approval page.
+- **`deny`** — The action is not allowed and cannot be escalated. Explain the limit and stop; do not retry.
 
-1. Confirm the shopping goal and missing constraints.
-2. Search Walmart for each requested item.
-3. Compare the best matching options.
-4. Present a concise recommendation when a choice is needed.
-5. Add only user-approved items to the cart.
-6. Re-open the cart and verify titles, quantities, seller, subtotal, fees, and estimated delivery or pickup details.
-7. Ask for explicit approval before proceeding to any irreversible checkout step.
+Proactively attach `evidence` to checkout (and other high-impact calls) when you already know a comparison was required, to avoid an extra round trip.
 
-## Output Format
+## Recurring tasks
 
-When reporting back, include:
+The user may ask you to manage recurring shopping (e.g. "buy milk every week", "handle the kids' birthday parties"). You can create or update automations from a regular agent thread — describe the task, the schedule, and whether it stays on the current thread (preferred) or starts fresh runs.
 
-- selected items and quantities
-- Walmart product links
-- item prices and estimated totals
-- fulfillment method
-- any unresolved choices or risks before checkout
+Look in the working directory for these default files and use them when relevant:
+
+| File                 | Purpose                                 |
+| -------------------- | --------------------------------------- |
+| `birthdays.txt`      | Birthdays to plan for.                  |
+| `grocery_to_buy.txt` | Groceries needed for the current order. |
