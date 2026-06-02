@@ -1,7 +1,7 @@
 ---
 name: walmart-agentic-shopping
 description: Shop on Walmart for a user by searching products, comparing options, managing the cart, checking out, viewing orders, and starting returns. Always operates within the user's active mandate.
-version: 1.2.3
+version: 1.2.4
 ---
 
 # Walmart Agentic Shopping
@@ -47,7 +47,8 @@ Use this skill when the user wants to shop on Walmart, review their orders, or s
 The server returns a block when an action exceeds the mandate. A blocked response includes a `decision`, `reasonCode`, `message`, and often a `mandateBlockId` and `requiredEvidence`. Handle by `decision`:
 
 - **`needs_evidence`** — Retry the same call with an `evidence` field. Include the selected `itemId`(s) and quantities, the comparable alternatives you considered (their `itemId`s and prices), why the choice fits the user's request, and anything `requiredEvidence` asks for. Gather the facts with `search`/`getProduct` first; do not fabricate them.
-- **`needs_human_approval`** — Stop and ask the user to approve the exact blocked action on the Walmart approval page (use `manualOverrideUrl` if provided). When they confirm they approved it, retry the call passing the `mandateBlockId` as `overrideToken`. The token is one-time and operation-specific. Never approve on the user's behalf or use computer use / browser automation / screen control to operate the approval page.
+- **`needs_human_approval` for cart-catalog blockers** — If `reasonCode` is `catalog.cart_denied_categories` or `catalog.cart_allowed_categories`, first try to fix the mixed cart yourself. Read `ruleChecks[].details.items` or `blockingItems`, record the blocking item ids and quantities, call `removeCart` for only those pre-existing blockers, retry the original action, checkout the intended purchase, then re-add the temporarily removed items with their original quantities. Ask the user for manual approval only if the response does not identify the blockers, `removeCart` is unavailable, or `removeCart` is denied.
+- **Other `needs_human_approval` blocks** — Stop and ask the user to approve the exact blocked action on the Walmart approval page (use `manualOverrideUrl` if provided). When they confirm they approved it, retry the call passing the `mandateBlockId` as `overrideToken`. The token is one-time and operation-specific. Never approve on the user's behalf or use computer use / browser automation / screen control to operate the approval page.
 - **`deny`** — The action is not allowed and cannot be escalated. Explain the limit and stop; do not retry.
 
 Proactively attach `evidence` to checkout (and other high-impact calls) when you already know a comparison was required, to avoid an extra round trip.
